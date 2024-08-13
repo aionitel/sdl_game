@@ -4,6 +4,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
+
+void print_keyboard_event(SDL_KeyboardEvent *key) {
+	// Key up or key down?
+	if (key->type == SDL_KEYUP) {
+		printf("Released - ");
+	} else {
+		printf("Pressed - ");
+	} 
+
+	// Print name of key.
+	printf("%s\n", SDL_GetKeyName(key->keysym.sym));
+}
 
 SDL_Window *init_window(int height, int width) {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -35,6 +48,7 @@ int main() {
 		printf("Could not create window!");
 		exit(1);
 	}
+
 	SDL_Renderer *renderer = SDL_CreateRenderer(
 		window,
 		-1,
@@ -43,12 +57,21 @@ int main() {
 	SDL_GL_CreateContext(window);
 
 	// Main loop.
-	SDL_Event event;
 	int running = 1;
+	SDL_Event event;
 	while (running) {
 		while (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT) {
-				running = 0;
+			switch (event.type) {
+				case SDL_QUIT:
+					running = 0;
+					break;
+				case SDL_KEYDOWN:
+					// Comparing current key stroke to memory address of Escape button.
+					if (strcmp(SDL_GetKeyName(event.key.keysym.sym), "15695182")) {
+						printf("Escape pressed, exiting game.");
+						running = 0;
+					}
+					break;
 			}
 		}
 	}
