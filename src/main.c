@@ -1,10 +1,11 @@
 #include "../include/glad/glad.h"
 #include "../include/SDL2/SDL.h"
+#include "types.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-SDL_Window *init_window() {
+SDL_Window *init_window(int height, int width) {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("SDL could not init, error: %s", SDL_GetError());
 		exit(1);
@@ -14,8 +15,8 @@ SDL_Window *init_window() {
 		"Game",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		500,
-		500,
+		height,
+		width,
 		SDL_WINDOW_OPENGL // Window usable with OpenGL context.
 	);
 
@@ -29,17 +30,17 @@ SDL_Window *init_window() {
 }
 
 int main() {
-	SDL_Window *window = init_window();
+	SDL_Window *window = init_window(1280, 720);
+	if (!window) {
+		printf("Could not create window!");
+		exit(1);
+	}
 	SDL_Renderer *renderer = SDL_CreateRenderer(
 		window,
 		-1,
 		SDL_RENDERER_PRESENTVSYNC
 	);
 	SDL_GL_CreateContext(window);
-
-	if (!window) {
-		printf("Failed to create window!");
-	}
 
 	// Main loop.
 	SDL_Event event;
