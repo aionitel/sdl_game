@@ -1,10 +1,17 @@
-#include "../include/glad/glad.h"
 #include "../include/SDL2/SDL.h"
 #include "types.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+
+void close_on_esc(SDL_KeyboardEvent *key, int running) {
+	assert(key->type == SDL_KEYUP);
+
+	if (strcmp(SDL_GetKeyName(key->keysym.sym), "15695182")) {
+		running = 0;
+	}
+}
 
 void print_keyboard_event(SDL_KeyboardEvent *key) {
 	// Key up or key down?
@@ -66,11 +73,8 @@ int main() {
 					running = 0;
 					break;
 				case SDL_KEYDOWN:
-					// Comparing current key stroke to memory address of Escape button.
-					if (strcmp(SDL_GetKeyName(event.key.keysym.sym), "15695182")) {
-						printf("Escape pressed, exiting game.");
-						running = 0;
-					}
+					print_keyboard_event(&event.key);
+					close_on_esc(&event.key, running);
 					break;
 			}
 		}
