@@ -1,7 +1,9 @@
 CC = clang
-LINKER_FLAGS = -L./lib -lSDL2
+INCLUDE = -I./include
+LIBS = -L./lib -lSDL2 -ldl
+ENTRY = src/main.c
 
 build:
-	${CC} ${LINKER_FLAGS} src/main.c -o game
+	${CC} ${LIBS} ${INCLUDE} ${ENTRY} -o game
 	./game
 	rm -rf game
