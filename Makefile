@@ -1,7 +1,8 @@
 CC = clang
 INCLUDE = -I./include
 LIBS = -L./lib -lSDL2 -ldl
-ENTRY = src/main.c
+SRC_FILES = src/main.c src/glad.c
+ENTRY = src/main.c src/glad.c
 
 build:
 	${CC} ${LIBS} ${INCLUDE} ${ENTRY} -o game

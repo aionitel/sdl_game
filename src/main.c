@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include <SDL2/SDL.h>
 #include "types.h"
 #include <stdio.h>
@@ -64,7 +65,7 @@ int main() {
 	SDL_GL_CreateContext(window);
 
 	// Init glad.
-	//int version = gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress);
+	int version = gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress);
 
 	// Main loop.
 	int running = 1;
