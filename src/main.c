@@ -10,7 +10,7 @@ void close_on_esc(SDL_KeyboardEvent *key, int running) {
 	assert(key->type == SDL_KEYUP);
 
 	if (strcmp(SDL_GetKeyName(key->keysym.sym), "15695182")) {
-		running = 0;
+		exit(1);
 	}
 }
 
@@ -41,6 +41,13 @@ SDL_Window *init_window(int height, int width) {
 		SDL_WINDOW_OPENGL // Window usable with OpenGL context.
 	);
 
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,24);
+
 	// Print and crash program if unable to open window.
 	if (!window) {
 		printf("Failed to init window, closing now");
@@ -57,15 +64,16 @@ int main() {
 		exit(1);
 	}
 
-	SDL_Renderer *renderer = SDL_CreateRenderer(
-		window,
-		-1,
-		SDL_RENDERER_PRESENTVSYNC
-	);
 	SDL_GL_CreateContext(window);
+	int version = gladLoadGLLoader(SDL_GL_GetProcAddress);
+	if (version == 0) {
+		printf("Failed to initialize OpenGL context\n");
+		return -1;
+	} else {
+		printf("Initialized OpenGL! Version: %d\n", version);
+	}
 
-	// Init glad.
-	int version = gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress);
+	glViewport(0, 0, 1280, 720);
 
 	// Main loop.
 	int running = 1;
