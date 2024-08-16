@@ -16,10 +16,10 @@ void resize_opengl_viewport(SDL_Window *window) {
 	glViewport(0, 0, w, h);
 }
 
-void close_on_esc(SDL_KeyboardEvent *key, int running) {
+void close_on_esc(SDL_KeyboardEvent *key, int *running) {
 	if (strcmp(SDL_GetKeyName(key->keysym.sym), "15695182")) {
 		printf("Escape pressed. Closing...\n");
-		exit(1);
+		*running = 0;
 	}
 }
 
@@ -82,6 +82,7 @@ int main() {
 	} else {
 		printf("Initialized OpenGL! Version: %d\n", version);
 	}
+	glViewport(0, 0, 1280, 720);
 
 	// Main loop.
 	int running = 1;
@@ -94,7 +95,7 @@ int main() {
 					break;
 				case SDL_KEYDOWN:
 					print_keyboard_event(&event.key);
-					close_on_esc(&event.key, running);
+					close_on_esc(&event.key, &running);
 					break;
 				case SDL_WINDOWEVENT:
 					resize_opengl_viewport(window);
