@@ -6,10 +6,19 @@
 #include <assert.h>
 #include <string.h>
 
-void close_on_esc(SDL_KeyboardEvent *key, int running) {
-	assert(key->type == SDL_KEYUP);
+void resize_opengl_viewport(SDL_Window *window) {
+	int h = SDL_GetWindowSurface(window)->h;
+	int w = SDL_GetWindowSurface(window)->w;
+	assert(h);
+	assert(w);
 
+	// Resize OpenGL viewport with new window size.
+	glViewport(0, 0, w, h);
+}
+
+void close_on_esc(SDL_KeyboardEvent *key, int running) {
 	if (strcmp(SDL_GetKeyName(key->keysym.sym), "15695182")) {
+		printf("Escape pressed. Closing...\n");
 		exit(1);
 	}
 }
@@ -41,6 +50,7 @@ SDL_Window *init_window(int height, int width) {
 		SDL_WINDOW_OPENGL // Window usable with OpenGL context.
 	);
 
+	SDL_SetWindowResizable(window, SDL_TRUE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -73,8 +83,6 @@ int main() {
 		printf("Initialized OpenGL! Version: %d\n", version);
 	}
 
-	glViewport(0, 0, 1280, 720);
-
 	// Main loop.
 	int running = 1;
 	SDL_Event event;
@@ -88,6 +96,8 @@ int main() {
 					print_keyboard_event(&event.key);
 					close_on_esc(&event.key, running);
 					break;
+				case SDL_WINDOWEVENT:
+					resize_opengl_viewport(window);
 			}
 		}
 	}
