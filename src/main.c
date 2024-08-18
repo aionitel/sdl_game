@@ -35,9 +35,14 @@ void print_keyboard_event(SDL_KeyboardEvent *key) {
 	printf("%s\n", SDL_GetKeyName(key->keysym.sym));
 }
 
-SDL_Window *init_window(int height, int width) {
+SDL_Window *window_init(int height, int width) {
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
+	// Init SDL.
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		printf("SDL could not init, error: %s", SDL_GetError());
+		printf("SDL could not init, error: %s\n", SDL_GetError());
 		exit(1);
 	}
 
@@ -49,14 +54,7 @@ SDL_Window *init_window(int height, int width) {
 		width,
 		SDL_WINDOW_OPENGL // Window usable with OpenGL context.
 	);
-
 	SDL_SetWindowResizable(window, SDL_TRUE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,24);
 
 	// Print and crash program if unable to open window.
 	if (!window) {
@@ -68,7 +66,7 @@ SDL_Window *init_window(int height, int width) {
 }
 
 int main() {
-	SDL_Window *window = init_window(1280, 720);
+	SDL_Window *window = window_init(1280, 720);
 	if (!window) {
 		printf("Could not create window!");
 		exit(1);
@@ -83,11 +81,15 @@ int main() {
 		printf("Initialized OpenGL! Version: %d\n", version);
 	}
 	glViewport(0, 0, 1280, 720);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
 
 	// Main loop.
 	int running = 1;
 	SDL_Event event;
 	while (running) {
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // State-SETTING function.
+		glClear(GL_COLOR_BUFFER_BIT); // State-USING function.
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_QUIT:
