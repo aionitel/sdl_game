@@ -89,7 +89,9 @@ int main() {
 	SDL_Event event;
 	while (running) {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // State-SETTING function.
-		glClear(GL_COLOR_BUFFER_BIT); // State-USING function.
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		SDL_GL_SwapWindow(window); // Swap the buffers to display the current frame
+
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_QUIT:
@@ -99,8 +101,8 @@ int main() {
 					print_keyboard_event(&event.key);
 					close_on_esc(&event.key, &running);
 					break;
-				case SDL_WINDOWEVENT:
-					resize_opengl_viewport(window);
+				//case SDL_WINDOWEVENT:
+					//resize_opengl_viewport(window);
 			}
 		}
 	}
