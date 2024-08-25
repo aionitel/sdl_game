@@ -6,6 +6,45 @@
 #include <assert.h>
 #include <string.h>
 
+void draw_triangle() {
+	float vertices[] = {
+	    -0.5f, -0.5f, 0.0f,
+     	0.5f, -0.5f, 0.0f,
+     	0.0f,  0.5f, 0.0f
+	};
+
+	// Create vertex buffer object and store in graphics card memory.
+	unsigned int VBO; // Vertex buffer object.
+	glGenBuffers(1, &VBO); // Allocate space for buffer object.
+	glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind newely created VBO buffer object to GL_ARRAY_BUFFER target type.
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Create vertex shader.
+	unsigned int vertex_shader;
+	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	assert(vertex_shader != 0); // glCreateShader returns 0 if an error has occured.
+
+	const char *vertex_shader_source= "#version 330 core\n"
+    	"layout (location = 0) in vec3 aPos;\n"
+    	"void main()\n"
+    	"{\n"
+    	"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    	"}\0";
+	glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
+	glCompileShader(vertex_shader);
+
+	// Check if shader compiled properly.
+	int success;
+	char info_log[512];
+	glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(vertex_shader, 512, NULL, info_log);
+		printf("ERROR OCCURED COMPILING SHADER, ERROR: %s\n", info_log);
+	} else {
+		printf("COMPILED SHADER");
+	}
+}
+
 void resize_opengl_viewport(SDL_Window *window) {
 	int h = SDL_GetWindowSurface(window)->h;
 	int w = SDL_GetWindowSurface(window)->w;
@@ -36,10 +75,6 @@ void print_keyboard_event(SDL_KeyboardEvent *key) {
 }
 
 SDL_Window *window_init(int height, int width) {
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-
 	// Init SDL.
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("SDL could not init, error: %s\n", SDL_GetError());
@@ -55,6 +90,13 @@ SDL_Window *window_init(int height, int width) {
 		SDL_WINDOW_OPENGL // Window usable with OpenGL context.
 	);
 	SDL_SetWindowResizable(window, SDL_TRUE);
+
+	// Set necessary attributes. (Hints)
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, GL_TRUE);
+
 
 	// Print and crash program if unable to open window.
 	if (!window) {
@@ -81,8 +123,7 @@ int main() {
 		printf("Initialized OpenGL! Version: %d\n", version);
 	}
 	glViewport(0, 0, 1280, 720);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glDepthMask(GL_TRUE);
+	draw_triangle();
 
 	// Main loop.
 	int running = 1;
@@ -101,8 +142,6 @@ int main() {
 					print_keyboard_event(&event.key);
 					close_on_esc(&event.key, &running);
 					break;
-				//case SDL_WINDOWEVENT:
-					//resize_opengl_viewport(window);
 			}
 		}
 	}
