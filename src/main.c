@@ -6,43 +6,72 @@
 #include <assert.h>
 #include <string.h>
 
-void draw_triangle() {
-	float vertices[] = {
-	    -0.5f, -0.5f, 0.0f,
-     	0.5f, -0.5f, 0.0f,
-     	0.0f,  0.5f, 0.0f
-	};
+static const int WIDTH = 1080;
+static const int HEIGHT = 720;
 
-	// Create vertex buffer object and store in graphics card memory.
-	unsigned int VBO; // Vertex buffer object.
-	glGenBuffers(1, &VBO); // Allocate space for buffer object.
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind newely created VBO buffer object to GL_ARRAY_BUFFER target type.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+static float vertices[] = {
+	-0.5f, -0.5f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    0.0f,  0.5f, 0.0f
+};
 
-	// Create vertex shader.
-	unsigned int vertex_shader;
-	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	assert(vertex_shader != 0); // glCreateShader returns 0 if an error has occured.
+static const char *vertex_shader_source =
+	"#version 330 core\n"
+	"layout (location = 0) in vec3 aPos;\n"
+	"void main() {\n"
+	"	gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+	"}\0";
+static const char *fragment_shader_source =
+	"#version 330 core\n"
+	"out vec4 FragColor;\n"
+	"void main() {\n"
+	"	FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
+	"}\0";
 
-	const char *vertex_shader_source= "#version 330 core\n"
-    	"layout (location = 0) in vec3 aPos;\n"
-    	"void main()\n"
-    	"{\n"
-    	"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    	"}\0";
+unsigned int get_shader_program() {
+	// Error handling.
+	int success, log_length;
+	char *log;
+
+	// Vertex shader.
+	unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
 	glCompileShader(vertex_shader);
-
-	// Check if shader compiled properly.
-	int success;
-	char info_log[512];
 	glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
 	if (!success) {
-		glGetShaderInfoLog(vertex_shader, 512, NULL, info_log);
-		printf("ERROR OCCURED COMPILING SHADER, ERROR: %s\n", info_log);
-	} else {
-		printf("COMPILED SHADER");
+		printf("Vertex shader could not be compiled!\n");
 	}
+
+	// Fragment shader.
+	unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+	glCompileShader(fragment_shader);
+	glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
+	glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &log_length);
+	log = malloc(log_length);
+	if (!success) {
+		glGetShaderInfoLog(fragment_shader, log_length, NULL, log);
+		printf("Fragment shader could not be compiled!\n");
+		printf("Fragment shader ERROR: %s\n", log);
+	}
+
+	// Link shaders.
+	unsigned int shader_program = glCreateProgram();
+	glAttachShader(shader_program, vertex_shader);
+	glAttachShader(shader_program, fragment_shader); glLinkProgram(shader_program);
+	glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+	glGetProgramiv(shader_program, GL_INFO_LOG_LENGTH, &log_length);
+	log = realloc(log, log_length);
+	if (!success) {
+		glGetShaderInfoLog(shader_program, log_length, NULL, log);
+		printf("Error linking shaders with shader_program\n");
+		printf("LINKER ERROR: %s\n", log);
+	}
+
+	// Cleanup.
+	free(log);
+
+	return shader_program;
 }
 
 void resize_opengl_viewport(SDL_Window *window) {
@@ -108,13 +137,15 @@ SDL_Window *window_init(int height, int width) {
 }
 
 int main() {
+	// Window creation.
 	SDL_Window *window = window_init(1280, 720);
 	if (!window) {
 		printf("Could not create window!");
 		exit(1);
 	}
-
 	SDL_GL_CreateContext(window);
+
+	// Load GLAD. (OpenGL functions)
 	int version = gladLoadGLLoader(SDL_GL_GetProcAddress);
 	if (version == 0) {
 		printf("Failed to initialize OpenGL context\n");
@@ -122,26 +153,43 @@ int main() {
 	} else {
 		printf("Initialized OpenGL! Version: %d\n", version);
 	}
-	glViewport(0, 0, 1280, 720);
-	draw_triangle();
+
+	// Shader program.
+	unsigned int shader_program = get_shader_program();
+
+	// Vertex buffer and array setup.
+	unsigned int vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// Global draw state.
+	glUseProgram(shader_program);
+	glViewport(0, 0, WIDTH, HEIGHT);
 
 	// Main loop.
 	int running = 1;
 	SDL_Event event;
 	while (running) {
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // State-SETTING function.
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glEnableVertexAttribArray(0);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDisableVertexAttribArray(0);
 		SDL_GL_SwapWindow(window); // Swap the buffers to display the current frame
 
-		while (SDL_PollEvent(&event)) {
+		if (SDL_PollEvent(&event)) {
+			printf("Event recieved!\n");
 			switch (event.type) {
 				case SDL_QUIT:
 					running = 0;
 					break;
 				case SDL_KEYDOWN:
-					print_keyboard_event(&event.key);
 					close_on_esc(&event.key, &running);
-					break;
 			}
 		}
 	}
