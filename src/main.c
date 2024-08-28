@@ -3,9 +3,7 @@
 #include "types.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-
+#include <assert.h> #include <string.h>
 static const int WIDTH = 1080;
 static const int HEIGHT = 720;
 
@@ -59,17 +57,16 @@ unsigned int get_shader_program() {
 	unsigned int shader_program = glCreateProgram();
 	glAttachShader(shader_program, vertex_shader);
 	glAttachShader(shader_program, fragment_shader); glLinkProgram(shader_program);
-	glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
-	glGetProgramiv(shader_program, GL_INFO_LOG_LENGTH, &log_length);
-	log = realloc(log, log_length);
+	glGetProgramiv(shader_program, GL_LINK_STATUS, &success); glGetProgramiv(shader_program, GL_INFO_LOG_LENGTH, &log_length); log = realloc(log, log_length);
 	if (!success) {
-		glGetShaderInfoLog(shader_program, log_length, NULL, log);
-		printf("Error linking shaders with shader_program\n");
+		glGetShaderInfoLog(shader_program, log_length, NULL, log); printf("Error linking shaders with shader_program\n");
 		printf("LINKER ERROR: %s\n", log);
 	}
 
 	// Cleanup.
 	free(log);
+	glDeleteShader(vertex_shader);
+	glDeleteShader(fragment_shader);
 
 	return shader_program;
 }
@@ -183,7 +180,6 @@ int main() {
 		SDL_GL_SwapWindow(window); // Swap the buffers to display the current frame
 
 		if (SDL_PollEvent(&event)) {
-			printf("Event recieved!\n");
 			switch (event.type) {
 				case SDL_QUIT:
 					running = 0;
@@ -193,6 +189,13 @@ int main() {
 			}
 		}
 	}
+
+	// Cleanup.
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	glDeleteProgram(shader_program);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 
 	return 0;
 }
