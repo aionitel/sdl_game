@@ -2,3 +2,4 @@
 ./game
 game
 .DS_Store
+*.swp
