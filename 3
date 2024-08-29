@@ -1,14 +1,12 @@
 #include <glad/glad.h>
 #include <SDL2/SDL.h>
-#include <cglm/cglm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h> 
 #include <string.h>
 
-static const int WIDTH = 1080;
+static const int WIDTH = 720;
 static const int HEIGHT = 720;
-static const vec3 test = {0, 0, 0};
 
 static float vertices[] = {
 	// position        // colour
@@ -23,7 +21,7 @@ static const char *vertex_shader_source =
 	"layout (location = 1) in vec3 aColor;\n"
 	"out vec3 ourColor;\n"
 	"void main() {\n"
-	"	gl_Position = vec4(-aPos, 1.0);\n"
+	"	gl_Position = vec4(aPos, 1.0);\n"
 	"	ourColor = aColor;\n"
 	"}\0";
 static const char *fragment_shader_source =
@@ -143,7 +141,7 @@ SDL_Window *window_init(int height, int width) {
 
 int main() {
 	// Window creation.
-	SDL_Window *window = window_init(WIDTH, HEIGHT);
+	SDL_Window *window = window_init(1280, 720);
 	if (!window) {
 		printf("Could not create window!");
 		exit(1);
