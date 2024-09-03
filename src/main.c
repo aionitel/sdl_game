@@ -8,7 +8,6 @@
 
 static const int WIDTH = 1080;
 static const int HEIGHT = 720;
-static const vec3 test = {0, 0, 0};
 
 static float vertices[] = {
 	// position        // colour
@@ -23,7 +22,7 @@ static const char *vertex_shader_source =
 	"layout (location = 1) in vec3 aColor;\n"
 	"out vec3 ourColor;\n"
 	"void main() {\n"
-	"	gl_Position = vec4(-aPos, 1.0);\n"
+	"	gl_Position = vec4(aPos, 1.0);\n"
 	"	ourColor = aColor;\n"
 	"}\0";
 static const char *fragment_shader_source =
@@ -64,7 +63,8 @@ unsigned int get_shader_program() {
 	unsigned int shader_program = glCreateProgram();
 	glAttachShader(shader_program, vertex_shader);
 	glAttachShader(shader_program, fragment_shader); glLinkProgram(shader_program);
-	glGetProgramiv(shader_program, GL_LINK_STATUS, &success); glGetProgramiv(shader_program, GL_INFO_LOG_LENGTH, &log_length);
+	glGetProgramiv(shader_program, GL_LINK_STATUS, &success); 
+	glGetProgramiv(shader_program, GL_INFO_LOG_LENGTH, &log_length);
 	log = realloc(log, log_length);
 	if (!success) {
 		glGetShaderInfoLog(shader_program, log_length, NULL, log); printf("Error linking shaders with shader_program\n");
