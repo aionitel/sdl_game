@@ -6,7 +6,7 @@
 #include <assert.h> 
 #include <string.h>
 
-static const int WIDTH = 1080;
+static const int WIDTH = 1280;
 static const int HEIGHT = 720;
 
 static float vertices[] = {
@@ -21,8 +21,9 @@ static const char *vertex_shader_source =
 	"layout (location = 0) in vec3 aPos;\n"
 	"layout (location = 1) in vec3 aColor;\n"
 	"out vec3 ourColor;\n"
+	"uniform mat4 trans_mat;\n"
 	"void main() {\n"
-	"	gl_Position = vec4(aPos, 1.0);\n"
+	"	gl_Position = trans_mat * vec4(aPos, 1.0);\n"
 	"	ourColor = aColor;\n"
 	"}\0";
 static const char *fragment_shader_source =
@@ -181,6 +182,18 @@ int main() {
 	// Global draw state.
 	glUseProgram(shader_program);
 	glViewport(0, 0, WIDTH, HEIGHT);
+
+	// rotation (transform) matrix.
+	vec3 axis = {0.0f, 0.0f, 1.0f};
+	vec3 scale = {0.5f, 0.5f, 0.5f};
+	mat4 trans_mat = GLM_MAT4_IDENTITY_INIT;
+	glm_mat4_print(trans_mat, stdout);
+	glm_rotate(trans_mat, glm_rad(90.0f), axis);
+	glm_mat4_print(trans_mat, stdout);
+
+	// send rotation matrix to shader.
+	unsigned int transform_location= glGetUniformLocation(shader_program, "trans_mat");
+	glUniformMatrix4fv(transform_location, 1, GL_FALSE, trans_mat);
 
 	// Main loop.
 	int running = 1;
