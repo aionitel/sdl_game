@@ -8,34 +8,17 @@
 static const int WIDTH = 1280;
 static const int HEIGHT = 720;
 
-static const char *vertex_shader_source =
-	"#version 330 core\n"
-	"layout (location = 0) in vec3 apos;\n"
-	"layout (location = 1) in vec3 acolor;\n"
-	"out vec3 ourcolor;\n"
-	"uniform mat4 trans_mat;\n"
-	"void main() {\n"
-	"	gl_position = trans_mat * vec4(apos, 1.0);\n"
-	"	ourcolor = acolor;\n"
-	"}\0";
-static const char *fragment_shader_source =
-	"#version 330 core\n"
-	"in vec3 ourcolor;\n"
-	"out vec4 fragcolor;\n"
-	"void main() {\n"
-		"fragcolor = vec4(ourcolor, 1.0);\n"
-	"}\0";
-
-static const char *vertex_shader_source_next =
+static const char *vertex_shader_source=
 	"#version 330 core\n"
 	"layout (location = 0) in vec4 pos;\n"
 	"layout (location = 1) in vec4 inColor;\n"
+	"uniform mat4 trans_mat;\n"
 	"out vec4 color;\n"
 	"void main() {\n"
-	"	gl_Position = pos;\n"
+	"	gl_Position = pos * trans_mat;\n"
 	"	color = inColor;\n"
 	"}\0";
-static const char *fragment_shader_source_next =
+static const char *fragment_shader_source =
 	"#version 330 core\n"
 	"in vec4 color;\n"
 	"out vec4 FragColor;\n"
@@ -43,14 +26,7 @@ static const char *fragment_shader_source_next =
 	"	FragColor = color;\n"
 	"}\0";
 
-
 static float vertices[] = {
-	-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // Bottom-right corner
-    0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // Bottom-left corner
-    0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f // Top corner
-};
-
-static float vertices_next[24] = {
 	-0.5f, -0.5f, 0.0f, 1.0f, // [x, y, z, w]
 	1.0f, 0.0f, 0.0f, 1.0f,  // [r, g, b, a]
     0.5f, -0.5f, 0.0f, 1.0f, 
@@ -66,7 +42,7 @@ unsigned int get_shader_program() {
 
 	// Vertex shader.
 	unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertex_shader, 1, &vertex_shader_source_next, NULL);
+	glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
 	glCompileShader(vertex_shader);
 	glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
 	if (!success) {
@@ -75,7 +51,7 @@ unsigned int get_shader_program() {
 
 	// Fragment shader.
 	unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment_shader, 1, &fragment_shader_source_next, NULL);
+	glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
 	glCompileShader(fragment_shader);
 	glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
 	glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &log_length);
@@ -194,7 +170,7 @@ int main() {
 
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_next), vertices_next, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	// Position attribute.
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -216,8 +192,8 @@ int main() {
 	glm_mat4_print(trans_mat, stdout);
 
 	// send rotation matrix to shader.
-	//unsigned int transform_location= glGetUniformLocation(shader_program, "trans_mat");
-	//glUniformMatrix4fv(transform_location, 1, GL_FALSE, trans_mat);
+	unsigned int transform_location= glGetUniformLocation(shader_program, "trans_mat");
+	glUniformMatrix4fv(transform_location, 1, GL_FALSE, trans_mat);
 
 	// Main loop.
 	int running = 1;
