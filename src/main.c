@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h> 
 #include <string.h>
+
 static const int WIDTH = 1280;
 static const int HEIGHT = 720;
 
@@ -15,7 +16,7 @@ static const char *vertex_shader_source=
 	"uniform mat4 trans_mat;\n"
 	"out vec4 color;\n"
 	"void main() {\n"
-	"	gl_Position = pos * trans_mat;\n"
+	"	gl_Position = pos;\n"
 	"	color = inColor;\n"
 	"}\0";
 static const char *fragment_shader_source =
@@ -27,12 +28,23 @@ static const char *fragment_shader_source =
 	"}\0";
 
 static float vertices[] = {
-	-0.5f, -0.5f, 0.0f, 1.0f, // [x, y, z, w]
-	1.0f, 0.0f, 0.0f, 1.0f,  // [r, g, b, a]
-    0.5f, -0.5f, 0.0f, 1.0f, 
+	// Top right.
+    0.5f,  0.5f, 0.0f, 1.0f,
 	0.0f, 1.0f, 0.0f, 1.0f,
-    0.0f,  0.5f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f, 1.0f
+	// Top left.
+	-0.5f, 0.5f, 0.0, 1.0f,
+	1.0f, 0.0f, 0.0f, 1.0f,
+	// Bottom right.
+	0.5f, -0.5f, 0.0f, 1.0f,
+	0.0f, 1.0f, 0.0f, 1.0f,
+	// Bottom left.
+	-0.5f, -0.5f, 0.0f, 1.0f,
+	0.0f, 0.0f, 0.0f, 1.0f,
+};
+
+unsigned int indices[] = {
+	0, 1, 3, // First triangle.
+	1, 2, 3  // Second triangle.
 };
 
 unsigned int get_shader_program() {
@@ -86,8 +98,7 @@ void resize_opengl_viewport(SDL_Window *window) {
 	assert(h);
 	assert(w);
 
-// Resize OpenGL viewport with new window size.
-	glViewport(0, 0, w, h);
+// Resize OpenGL viewport with new window size.  glViewport(0, 0, w, h);
 }
 
 void close_on_esc(SDL_KeyboardEvent *key, int *running) {
@@ -164,20 +175,22 @@ int main() {
 	unsigned int shader_program = get_shader_program();
 
 	// Vertex buffer and array setup.
-	unsigned int vbo, vao;
+	unsigned int vbo, vao, ebo;
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
+	glGenBuffers(1, &ebo);
 
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	// Position attribute.
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	// Color attribute.
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4* sizeof(float)));
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// Global draw state.
 	glUseProgram(shader_program);
@@ -200,7 +213,7 @@ int main() {
 	SDL_Event event;
 	while (running) {
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 		SDL_GL_SwapWindow(window); // Swap window to update current frame.
 
 		if (SDL_PollEvent(&event)) {
