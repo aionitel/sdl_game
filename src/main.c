@@ -56,18 +56,24 @@ unsigned int get_shader_program() {
 	unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
 	glCompileShader(vertex_shader);
+	// Check for error compiling vertex shader.
 	glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
+	glGetShaderiv(vertex_shader, GL_INFO_LOG_LENGTH, &log_length);
+	log = malloc(log_length);
 	if (!success) {
+		glGetShaderInfoLog(vertex_shader, log_length, NULL, log);
 		printf("Vertex shader could not be compiled!\n");
+		printf("Vertex shader ERROR: %s\n", log);
 	}
 
 	// Fragment shader.
 	unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
 	glCompileShader(fragment_shader);
+	// Check for error compiling fragment shader.
 	glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
 	glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &log_length);
-	log = malloc(log_length);
+	log = realloc(log, log_length);
 	if (!success) {
 		glGetShaderInfoLog(fragment_shader, log_length, NULL, log);
 		printf("Fragment shader could not be compiled!\n");
@@ -185,6 +191,7 @@ int main() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	// Position attribute.
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -192,11 +199,10 @@ int main() {
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4* sizeof(float)));
 	glEnableVertexAttribArray(1);
 
-	// Global draw state.
 	glUseProgram(shader_program);
 	glViewport(0, 0, WIDTH, HEIGHT);
 
-	// rotation (transform) matrix.
+	// Rotation matrix.
 	vec3 axis = {0.0f, 0.0f, 1.0f};
 	vec3 scale = {0.5f, 0.5f, 0.5f};
 	mat4 trans_mat = GLM_MAT4_IDENTITY_INIT;
@@ -204,17 +210,17 @@ int main() {
 	glm_rotate(trans_mat, glm_rad(90.0f), axis);
 	glm_mat4_print(trans_mat, stdout);
 
-	// send rotation matrix to shader.
+	// Send rotation matrix to shader.
 	unsigned int transform_location= glGetUniformLocation(shader_program, "trans_mat");
 	glUniformMatrix4fv(transform_location, 1, GL_FALSE, trans_mat);
 
-	// Main loop.
+	// Main game loop.
 	int running = 1;
 	SDL_Event event;
 	while (running) {
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-		SDL_GL_SwapWindow(window); // Swap window to update current frame.
+		glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
+		SDL_GL_SwapWindow(window); // Swap window (buffer) to update current frame.
 
 		if (SDL_PollEvent(&event)) {
 			switch (event.type) {
