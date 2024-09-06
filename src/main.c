@@ -5,34 +5,59 @@
 #include <stdlib.h>
 #include <assert.h> 
 #include <string.h>
-
 static const int WIDTH = 1280;
 static const int HEIGHT = 720;
 
+static const char *vertex_shader_source =
+	"#version 330 core\n"
+	"layout (location = 0) in vec3 apos;\n"
+	"layout (location = 1) in vec3 acolor;\n"
+	"out vec3 ourcolor;\n"
+	"uniform mat4 trans_mat;\n"
+	"void main() {\n"
+	"	gl_position = trans_mat * vec4(apos, 1.0);\n"
+	"	ourcolor = acolor;\n"
+	"}\0";
+static const char *fragment_shader_source =
+	"#version 330 core\n"
+	"in vec3 ourcolor;\n"
+	"out vec4 fragcolor;\n"
+	"void main() {\n"
+		"fragcolor = vec4(ourcolor, 1.0);\n"
+	"}\0";
+
+static const char *vertex_shader_source_next =
+	"#version 330 core\n"
+	"layout (location = 0) in vec4 pos;\n"
+	"layout (location = 1) in vec4 inColor;\n"
+	"out vec4 color;\n"
+	"void main() {\n"
+	"	gl_Position = pos;\n"
+	"	color = inColor;\n"
+	"}\0";
+static const char *fragment_shader_source_next =
+	"#version 330 core\n"
+	"in vec4 color;\n"
+	"out vec4 FragColor;\n"
+	"void main() {\n"
+	"	FragColor = color;\n"
+	"}\0";
+
+
 static float vertices[] = {
-	// position        // colour
 	-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // Bottom-right corner
     0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // Bottom-left corner
     0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f // Top corner
 };
 
-static const char *vertex_shader_source =
-	"#version 330 core\n"
-	"layout (location = 0) in vec3 aPos;\n"
-	"layout (location = 1) in vec3 aColor;\n"
-	"out vec3 ourColor;\n"
-	"uniform mat4 trans_mat;\n"
-	"void main() {\n"
-	"	gl_Position = trans_mat * vec4(aPos, 1.0);\n"
-	"	ourColor = aColor;\n"
-	"}\0";
-static const char *fragment_shader_source =
-	"#version 330 core\n"
-	"in vec3 ourColor;\n"
-	"out vec4 FragColor;\n"
-	"void main() {\n"
-		"FragColor = vec4(ourColor, 1.0);\n"
-	"}\0";
+static float vertices_next[24] = {
+	-0.5f, -0.5f, 0.0f, 1.0f, // [x, y, z, w]
+	1.0f, 0.0f, 0.0f, 1.0f,  // [r, g, b, a]
+    0.5f, -0.5f, 0.0f, 1.0f, 
+	0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f,  0.5f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f, 1.0f
+};
 
 unsigned int get_shader_program() {
 	// Error handling.
@@ -41,7 +66,7 @@ unsigned int get_shader_program() {
 
 	// Vertex shader.
 	unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
+	glShaderSource(vertex_shader, 1, &vertex_shader_source_next, NULL);
 	glCompileShader(vertex_shader);
 	glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
 	if (!success) {
@@ -50,7 +75,7 @@ unsigned int get_shader_program() {
 
 	// Fragment shader.
 	unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+	glShaderSource(fragment_shader, 1, &fragment_shader_source_next, NULL);
 	glCompileShader(fragment_shader);
 	glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
 	glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &log_length);
@@ -69,14 +94,13 @@ unsigned int get_shader_program() {
 	log = realloc(log, log_length);
 	if (!success) {
 		glGetShaderInfoLog(shader_program, log_length, NULL, log); printf("Error linking shaders with shader_program\n");
-		printf("LINKER ERROR: %s\n", log);
+	
 	}
 
 	// Cleanup.
 	free(log);
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
-
 	return shader_program;
 }
 
@@ -86,7 +110,7 @@ void resize_opengl_viewport(SDL_Window *window) {
 	assert(h);
 	assert(w);
 
-	// Resize OpenGL viewport with new window size.
+// Resize OpenGL viewport with new window size.
 	glViewport(0, 0, w, h);
 }
 
@@ -170,12 +194,12 @@ int main() {
 
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_next), vertices_next, GL_STATIC_DRAW);
 	// Position attribute.
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	// Color attribute.
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4* sizeof(float)));
 	glEnableVertexAttribArray(1);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -192,8 +216,8 @@ int main() {
 	glm_mat4_print(trans_mat, stdout);
 
 	// send rotation matrix to shader.
-	unsigned int transform_location= glGetUniformLocation(shader_program, "trans_mat");
-	glUniformMatrix4fv(transform_location, 1, GL_FALSE, trans_mat);
+	//unsigned int transform_location= glGetUniformLocation(shader_program, "trans_mat");
+	//glUniformMatrix4fv(transform_location, 1, GL_FALSE, trans_mat);
 
 	// Main loop.
 	int running = 1;
