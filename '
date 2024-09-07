@@ -99,20 +99,17 @@ unsigned int get_shader_program() {
 	return shader_program;
 }
 
-// Resize OpenGL viewport with new window size.
 void resize_opengl_viewport(SDL_Window *window) {
 	int h = SDL_GetWindowSurface(window)->h;
 	int w = SDL_GetWindowSurface(window)->w;
 	assert(h);
 	assert(w);
-	glViewport(0, 0, w, h);
+
+// Resize OpenGL viewport with new window size.  glViewport(0, 0, w, h);
 }
 
-void close_on_esc(SDL_KeyboardEvent *event, int *running) {
-	if (event->keysym.scancode == SDL_SCANCODE_ESCAPE) {
-		printf("Escape pressed. Closing...\n");
-		*running = 0;
-	}
+void close_on_esc(SDL_KeyboardEvent *key, int *running) {
+	printf("%d pressed.\n", SDL_KeyboardEvent->type);
 }
 
 void print_keyboard_event(SDL_KeyboardEvent *key) {
