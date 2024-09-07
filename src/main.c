@@ -43,7 +43,7 @@ static float vertices[] = {
 };
 
 unsigned int indices[] = {
-	0, 1, 3, // First triangle.
+	0, 1, 2, // First triangle.
 	1, 2, 3  // Second triangle.
 };
 
@@ -79,6 +79,7 @@ unsigned int get_shader_program() {
 		printf("Fragment shader could not be compiled!\n");
 		printf("Fragment shader ERROR: %s\n", log);
 	}
+
 	// Link shaders.
 	unsigned int shader_program = glCreateProgram();
 	glAttachShader(shader_program, vertex_shader);
