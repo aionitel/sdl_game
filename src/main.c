@@ -6,17 +6,19 @@
 #include <assert.h> 
 #include <string.h>
 
-static const int WIDTH = 1280;
-static const int HEIGHT = 720;
+static const int WIDTH = 800;
+static const int HEIGHT = 800;
 
 static const char *vertex_shader_source=
 	"#version 330 core\n"
 	"layout (location = 0) in vec4 pos;\n"
 	"layout (location = 1) in vec4 inColor;\n"
-	"uniform mat4 trans_mat;\n"
 	"out vec4 color;\n"
+	"uniform mat4 model;"
+	"uniform mat4 view;"
+	"uniform mat4 proj;"
 	"void main() {\n"
-	"	gl_Position = trans_mat * pos;\n"
+	"	gl_Position = pos;\n"
 	"	color = inColor;\n"
 	"}\0";
 static const char *fragment_shader_source =
@@ -103,8 +105,7 @@ unsigned int get_shader_program() {
 void resize_opengl_viewport(SDL_Window *window) {
 	int h = SDL_GetWindowSurface(window)->h;
 	int w = SDL_GetWindowSurface(window)->w;
-	assert(h);
-	assert(w);
+	printf("Window event! Resizing, W: %f, H: %f\n");
 	glViewport(0, 0, w, h);
 }
 
@@ -203,23 +204,23 @@ int main() {
 	glUseProgram(shader_program);
 	glViewport(0, 0, WIDTH, HEIGHT);
 
-	// Rotation matrix.
-	vec3 axis = {0.0f, 0.0f, 1.0f};
-	vec3 scale = {0.5f, 0.5f, 0.5f};
-	mat4 trans_mat = GLM_MAT4_IDENTITY_INIT;
-	glm_mat4_print(trans_mat, stdout);
-	glm_rotate(trans_mat, glm_rad(90.0f), axis);
-	glm_mat4_print(trans_mat, stdout);
+	// Perspective Projection.
+	mat4 model = GLM_MAT4_IDENTITY;
+	mat4 proj = GLM_MAT4_IDENTITY;
+	// Rotate entire scene forward on x_axis, square will tilt up.
+	glm_rotate_x(model, glm_rad(-45.0f), model);
+	glm_perspective(glm_rad(45.0f), 1.0f, 0.1f, 100.0f, proj);
 
-	// Send rotation matrix to shader.
-	unsigned int transform_location= glGetUniformLocation(shader_program, "trans_mat");
-	glUniformMatrix4fv(transform_location, 1, GL_FALSE, trans_mat);
+	// Send perspective transformations to shader.
+	int model_loc = glGetUniformLocation(shader_program, "model");
+	int proj_loc = glGetUniformLocation(shader_program, "proj");
+	glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+	glUniformMatrix4fv(proj_loc, 1, GL_FALSE, proj);
 
 	// Main game loop.
 	int running = 1;
 	SDL_Event event;
 	while (running) {
-		glClear(GL_COLOR_BUFFER_BIT);
 		glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
 		SDL_GL_SwapWindow(window); // Swap window (buffer) to update current frame.
 
@@ -230,6 +231,8 @@ int main() {
 					break;
 				case SDL_KEYDOWN:
 					close_on_esc(&event.key, &running);
+				case SDL_WINDOWEVENT_RESIZED:
+					resize_opengl_viewport(window);
 			}
 		}
 	}
