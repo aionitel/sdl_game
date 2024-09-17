@@ -16,7 +16,7 @@ static const char *vertex_shader_source=
 	"uniform mat4 view;\n"
 	"uniform mat4 proj;\n"
 	"void main() {\n"
-	"	gl_Position = view * proj * vec4(pos, 1.0f);\n"
+	"	gl_Position = view * vec4(pos, 1.0f);\n"
 	"}\0";
 static const char *fragment_shader_source =
 	"#version 330 core\n"
@@ -189,12 +189,13 @@ void camera(unsigned int shader_program) {
 	vec3 cam_direction = {0.0f, 0.0f, 1.0f};
 
 	vec3 cam_pos = {0.0f, 0.0f, 3.0f}; // Position of camera in world space.
+	cam_direction[0] = sin(SDL_GetTicks()); // Spinning cube! (Sort of.)
 
 	mat4 model = GLM_MAT4_IDENTITY;
 	mat4 view = GLM_MAT4_IDENTITY;
 	mat4 proj = GLM_MAT4_IDENTITY;
 	glm_lookat(cam_direction, forward, up, view);
-	glm_perspective_default(glm_rad(45.0f), view);
+	glm_perspective_default(glm_rad(45.0f), proj);
 
 	int model_loc = glGetUniformLocation(shader_program, "model");
 	int view_loc = glGetUniformLocation(shader_program, "view");
