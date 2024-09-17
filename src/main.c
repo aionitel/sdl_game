@@ -11,42 +11,63 @@ static const int HEIGHT = 800;
 
 static const char *vertex_shader_source=
 	"#version 330 core\n"
-	"layout (location = 0) in vec4 pos;\n"
-	"layout (location = 1) in vec4 inColor;\n"
-	"out vec4 color;\n"
-	"uniform mat4 model;"
-	"uniform mat4 view;"
-	"uniform mat4 proj;"
+	"layout (location = 0) in vec3 pos;\n"
+	"uniform mat4 model;\n"
+	"uniform mat4 view;\n"
+	"uniform mat4 proj;\n"
 	"void main() {\n"
-	"	gl_Position = pos;\n"
-	"	color = inColor;\n"
+	"	gl_Position = view * proj * vec4(pos, 1.0f);\n"
 	"}\0";
 static const char *fragment_shader_source =
 	"#version 330 core\n"
-	"in vec4 color;\n"
 	"out vec4 FragColor;\n"
 	"void main() {\n"
-	"	FragColor = color;\n"
+	"	FragColor = vec4(1.0f, 0.0f, 0.0f, 0.0f);\n" // Red.
 	"}\0";
 
-static float vertices[] = {
-	// Top right.
-    0.5f,  0.5f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f, 1.0f,
-	// Top left.
-	-0.5f, 0.5f, 0.0, 1.0f,
-	1.0f, 0.0f, 0.0f, 1.0f,
-	// Bottom right.
-	0.5f, -0.5f, 0.0f, 1.0f,
-	0.0f, 1.0f, 0.0f, 1.0f,
-	// Bottom left.
-	-0.5f, -0.5f, 0.0f, 1.0f,
-	0.0f, 0.0f, 0.0f, 1.0f,
-};
+// Manually initializing 36 individual vertices instead of using 8 vertices and index array.
+static const float vertices[] = {
+    -0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
 
-unsigned int indices[] = {
-	0, 1, 2, // First triangle.
-	1, 2, 3  // Second triangle.
+    -0.5f, -0.5f,  0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f,
+
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+
+    -0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f, -0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f,
+    -0.5f, -0.5f, -0.5f, 
+
+    -0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f
 };
 
 unsigned int get_shader_program() {
@@ -105,7 +126,6 @@ unsigned int get_shader_program() {
 void resize_opengl_viewport(SDL_Window *window) {
 	int h = SDL_GetWindowSurface(window)->h;
 	int w = SDL_GetWindowSurface(window)->w;
-	printf("Window event! Resizing, W: %f, H: %f\n");
 	glViewport(0, 0, w, h);
 }
 
@@ -161,6 +181,29 @@ SDL_Window *window_init(int height, int width) {
 	return window;
 }
 
+void camera(unsigned int shader_program) {
+	// Unit vectors.
+	vec3 up = GLM_YUP;
+	vec3 right = GLM_XUP;
+	vec3 forward = GLM_VEC3_ZERO; // Camera pointing towards origin.
+	vec3 cam_direction = {0.0f, 0.0f, 1.0f};
+
+	vec3 cam_pos = {0.0f, 0.0f, 3.0f}; // Position of camera in world space.
+
+	mat4 model = GLM_MAT4_IDENTITY;
+	mat4 view = GLM_MAT4_IDENTITY;
+	mat4 proj = GLM_MAT4_IDENTITY;
+	glm_lookat(cam_direction, forward, up, view);
+	glm_perspective_default(glm_rad(45.0f), view);
+
+	int model_loc = glGetUniformLocation(shader_program, "model");
+	int view_loc = glGetUniformLocation(shader_program, "view");
+	int proj_loc = glGetUniformLocation(shader_program, "proj");
+	glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+	glUniformMatrix4fv(view_loc, 1, GL_FALSE, view);
+	glUniformMatrix4fv(proj_loc, 1, GL_FALSE, proj);
+}
+
 int main() {
 	// Window creation.
 	SDL_Window *window = window_init(WIDTH, HEIGHT);
@@ -183,45 +226,27 @@ int main() {
 	unsigned int shader_program = get_shader_program();
 
 	// Vertex buffer and array setup.
-	unsigned int vbo, vao, ebo;
+	unsigned int vbo, vao;
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
 
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// Position attribute.
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	// Color attribute.
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4* sizeof(float)));
-	glEnableVertexAttribArray(1);
-
 	glUseProgram(shader_program);
 	glViewport(0, 0, WIDTH, HEIGHT);
-
-	// Perspective Projection.
-	mat4 model = GLM_MAT4_IDENTITY;
-	mat4 proj = GLM_MAT4_IDENTITY;
-	// Rotate entire scene forward on x_axis, square will tilt up.
-	glm_rotate_x(model, glm_rad(-45.0f), model);
-	glm_perspective(glm_rad(45.0f), 1.0f, 0.1f, 100.0f, proj);
-
-	// Send perspective transformations to shader.
-	int model_loc = glGetUniformLocation(shader_program, "model");
-	int proj_loc = glGetUniformLocation(shader_program, "proj");
-	glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
-	glUniformMatrix4fv(proj_loc, 1, GL_FALSE, proj);
 
 	// Main game loop.
 	int running = 1;
 	SDL_Event event;
 	while (running) {
-		glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		camera(shader_program);
 		SDL_GL_SwapWindow(window); // Swap window (buffer) to update current frame.
 
 		if (SDL_PollEvent(&event)) {
